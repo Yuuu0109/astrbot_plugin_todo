@@ -8,8 +8,8 @@
 """
 
 import asyncio
+from collections.abc import Awaitable, Callable
 from datetime import datetime, timedelta
-from typing import Callable, Awaitable
 
 from astrbot.api import logger
 

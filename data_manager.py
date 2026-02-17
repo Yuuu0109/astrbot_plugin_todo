@@ -7,12 +7,11 @@
   - 私聊：{unified_msg_origin}
 """
 
+import asyncio
 import json
 import os
 import uuid
-import asyncio
 from datetime import datetime, timedelta
-from typing import Any
 
 
 class TodoItem:
@@ -47,7 +46,9 @@ class TodoItem:
             "done": self.done,
             "done_at": self.done_at.isoformat() if self.done_at else None,
             "reminded": self.reminded,
-            "custom_reminder": self.custom_reminder.isoformat() if self.custom_reminder else None,
+            "custom_reminder": self.custom_reminder.isoformat()
+            if self.custom_reminder
+            else None,
         }
 
     @classmethod
@@ -55,12 +56,20 @@ class TodoItem:
         return cls(
             content=data["content"],
             todo_id=data.get("id"),
-            created_at=datetime.fromisoformat(data["created_at"]) if data.get("created_at") else None,
-            deadline=datetime.fromisoformat(data["deadline"]) if data.get("deadline") else None,
+            created_at=datetime.fromisoformat(data["created_at"])
+            if data.get("created_at")
+            else None,
+            deadline=datetime.fromisoformat(data["deadline"])
+            if data.get("deadline")
+            else None,
             done=data.get("done", False),
-            done_at=datetime.fromisoformat(data["done_at"]) if data.get("done_at") else None,
+            done_at=datetime.fromisoformat(data["done_at"])
+            if data.get("done_at")
+            else None,
             reminded=data.get("reminded", False),
-            custom_reminder=datetime.fromisoformat(data["custom_reminder"]) if data.get("custom_reminder") else None,
+            custom_reminder=datetime.fromisoformat(data["custom_reminder"])
+            if data.get("custom_reminder")
+            else None,
         )
 
 
@@ -79,9 +88,9 @@ class DataManager:
         """从 JSON 文件加载数据。"""
         if os.path.exists(self.data_file):
             try:
-                with open(self.data_file, "r", encoding="utf-8") as f:
+                with open(self.data_file, encoding="utf-8") as f:
                     self._data = json.load(f)
-            except (json.JSONDecodeError, IOError):
+            except (OSError, json.JSONDecodeError):
                 self._data = {}
         else:
             self._data = {}
@@ -93,7 +102,9 @@ class DataManager:
                 json.dump(self._data, f, ensure_ascii=False, indent=2)
 
     @staticmethod
-    def make_storage_key(unified_msg_origin: str, sender_id: str | None = None, is_group: bool = False) -> str:
+    def make_storage_key(
+        unified_msg_origin: str, sender_id: str | None = None, is_group: bool = False
+    ) -> str:
         """
         生成存储键。
         群聊：{umo}_{sender_id}，每群每人独立
@@ -112,7 +123,9 @@ class DataManager:
         """设置指定键下的所有待办。"""
         self._data[key] = [item.to_dict() for item in items]
 
-    async def add_todo(self, key: str, content: str, deadline: datetime | None = None) -> TodoItem:
+    async def add_todo(
+        self, key: str, content: str, deadline: datetime | None = None
+    ) -> TodoItem:
         """添加待办事项。"""
         item = TodoItem(content=content, deadline=deadline)
         items = self._get_items(key)
@@ -169,7 +182,9 @@ class DataManager:
         await self._save()
         return cleared
 
-    async def set_custom_reminder(self, key: str, index: int, reminder_time: datetime) -> TodoItem | None:
+    async def set_custom_reminder(
+        self, key: str, index: int, reminder_time: datetime
+    ) -> TodoItem | None:
         """为第 index 条未完成待办设置自定义提醒时间（1-based）。"""
         items = self._get_items(key)
         undone = [i for i in items if not i.done]
@@ -202,7 +217,8 @@ class DataManager:
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         today_end = now.replace(hour=23, minute=59, second=59, microsecond=999999)
         return [
-            i for i in items
+            i
+            for i in items
             if not i.done and i.deadline and today_start <= i.deadline <= today_end
         ]
 
@@ -210,10 +226,7 @@ class DataManager:
         """获取已逾期未完成的待办。"""
         items = self._get_items(key)
         now = datetime.now()
-        return [
-            i for i in items
-            if not i.done and i.deadline and i.deadline < now
-        ]
+        return [i for i in items if not i.done and i.deadline and i.deadline < now]
 
     def get_upcoming(self, key: str, days: int = 3) -> list[TodoItem]:
         """获取未来 N 天内到期的待办（不含今天）。"""
@@ -222,7 +235,8 @@ class DataManager:
         today_end = now.replace(hour=23, minute=59, second=59, microsecond=999999)
         future = now + timedelta(days=days)
         return [
-            i for i in items
+            i
+            for i in items
             if not i.done and i.deadline and today_end < i.deadline <= future
         ]
 
@@ -232,8 +246,11 @@ class DataManager:
         now = datetime.now()
         threshold = now + timedelta(minutes=advance_minutes)
         return [
-            i for i in items
-            if not i.done and not i.reminded and i.deadline
+            i
+            for i in items
+            if not i.done
+            and not i.reminded
+            and i.deadline
             and now <= i.deadline <= threshold
         ]
 
@@ -242,7 +259,8 @@ class DataManager:
         items = self._get_items(key)
         now = datetime.now()
         return [
-            i for i in items
+            i
+            for i in items
             if not i.done and i.custom_reminder and i.custom_reminder <= now
         ]
 
