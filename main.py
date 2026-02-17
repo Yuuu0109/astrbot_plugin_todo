@@ -27,7 +27,7 @@ from .time_parser import format_relative, format_time, parse_time
     "astrbot_plugin_todo",
     "Yuuu0109",
     "待办事项管理插件，支持中文自然语言时间、定时提醒和每日早报",
-    "1.0.0",
+    "1.0.1",
     "https://github.com/Yuuu0109/astrbot_plugin_todo",
 )
 class TodoPlugin(Star):
@@ -228,12 +228,90 @@ class TodoPlugin(Star):
                 f"❌ 序号 {index} 不存在，请用 /todo list 查看列表。"
             )
 
+    @todo.command("test_report")
+    async def todo_test_report(self, event: AstrMessageEvent):
+        """测试早报推送（立即发送一次早报到当前会话）"""
+        key = self._get_storage_key(event)
+        undone_count = self.data_manager.get_undone_count(key)
+
+        if undone_count == 0:
+            yield event.plain_result("📭 暂无待办事项，无需生成早报。")
+            return
+
+        due_today = self.data_manager.get_due_today(key)
+        overdue = self.data_manager.get_overdue(key)
+        upcoming = self.data_manager.get_upcoming(key, days=3)
+        done_count = self.data_manager.get_done_count(key)
+        items = await self.data_manager.get_todos(key)
+
+        lines = ["☀️ 每日待办早报（测试）", ""]
+
+        if overdue:
+            lines.append(f"🔴 已逾期 ({len(overdue)} 项)：")
+            for item in overdue:
+                lines.append(f"   • {item.content} ({format_relative(item.deadline)})")
+            lines.append("")
+
+        if due_today:
+            lines.append(f"🟡 今日到期 ({len(due_today)} 项)：")
+            for item in due_today:
+                lines.append(f"   • {item.content} ({format_time(item.deadline)})")
+            lines.append("")
+
+        if upcoming:
+            lines.append(f"🔵 近3天到期 ({len(upcoming)} 项)：")
+            for item in upcoming:
+                lines.append(f"   • {item.content} ({format_time(item.deadline)})")
+            lines.append("")
+
+        no_deadline = [i for i in items if not i.deadline]
+        if no_deadline:
+            lines.append(f"⚪ 无截止时间 ({len(no_deadline)} 项)：")
+            for item in no_deadline:
+                lines.append(f"   • {item.content}")
+            lines.append("")
+
+        lines.append(f"📊 待办总计：未完成 {undone_count} 项 | 已完成 {done_count} 项")
+
+        yield event.plain_result("\n".join(lines))
+
+    @todo.command("new")
+    async def todo_new(self, event: AstrMessageEvent):
+        """查看最新更新日志"""
+        changelog_path = os.path.join(os.path.dirname(__file__), "CHANGELOG.md")
+        if not os.path.exists(changelog_path):
+            yield event.plain_result("❌ 未找到更新日志文件。")
+            return
+
+        with open(changelog_path, encoding="utf-8") as f:
+            content = f.read()
+
+        # 提取最新版本日志
+        lines = content.split("\n")
+        latest_log = []
+        found_version = False
+
+        for line in lines:
+            if line.startswith("## v"):
+                if found_version:
+                    break
+                found_version = True
+                latest_log.append(line)
+            elif found_version:
+                latest_log.append(line)
+
+        if not latest_log:
+            yield event.plain_result("❌ 无法解析更新日志。")
+            return
+
+        yield event.plain_result("\n".join(latest_log).strip())
+
     @todo.command("help")
     async def todo_help(self, event: AstrMessageEvent):
         """查看帮助信息"""
-        help_text = """📋 待办事项插件 使用帮助
+        help_text = """📋 待办事项插件 v1.0.1 使用帮助
 
-🎯 可用指令：
+🎯 基础指令：
 
 📝 /todo add <内容> [截止时间]
    添加待办事项
@@ -256,6 +334,12 @@ class TodoPlugin(Star):
 
 🔔 /todo remind <序号> <时间>
    设置自定义提醒（仅私聊）
+
+🧪 /todo test_report
+   测试早报推送（立即发送一次）
+
+📄 /todo new
+   查看最新更新日志
 
 ⏰ 支持的时间格式：
    标准格式：2026-02-20 18:00

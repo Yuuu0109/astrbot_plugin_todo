@@ -1,6 +1,6 @@
 name: astrbot_plugin_todo
 display_name: 待办事项
 desc: 待办事项管理插件，支持中文自然语言时间、定时提醒和每日早报
-version: v1.0.0
+version: v1.0.1
 author: Yuuu0109
 repo: https://github.com/Yuuu0109/astrbot_plugin_todo
