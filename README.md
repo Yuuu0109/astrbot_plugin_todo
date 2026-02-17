@@ -1,9 +1,48 @@
-# helloworld
+<p align="center">
+  <img src="logo.png" alt="Todo Plugin Logo" width="200">
+</p>
 
-AstrBot 插件模板
+<h2 align="center">astrbot_plugin_todo</h1>
 
-A template plugin for AstrBot plugin feature
+AstrBot 待办事项管理插件，支持在 QQ 群聊/私聊中管理待办事项。
 
-# 支持
+## 功能特性
 
-- [插件开发文档](https://docs.astrbot.app/dev/star/plugin-new.html)
+- 待办事项的添加、查看、完成、删除
+- 中文自然语言时间解析（明天下午三点、后天、3天后、下周一等）
+- 截止时间提醒（仅私聊）
+- 每日早报推送（仅私聊）
+- 群聊中每人独立待办列表
+
+## 指令列表
+
+| 指令 | 说明 | 示例 |
+|------|------|------|
+| `/todo add <内容> [时间]` | 添加待办 | `/todo add 交报告 明天下午三点` |
+| `/todo list` | 查看未完成待办 | `/todo list` |
+| `/todo done <序号>` | 标记完成 | `/todo done 1` |
+| `/todo del <序号>` | 删除待办 | `/todo del 2` |
+| `/todo history` | 查看已完成 | `/todo history` |
+| `/todo clear` | 清空已完成 | `/todo clear` |
+| `/todo remind <序号> <时间>` | 设置提醒（仅私聊） | `/todo remind 1 明天早上8点` |
+| `/todo help` | 查看帮助 | `/todo help` |
+
+## 支持的时间格式
+
+- **标准格式**：`2026-02-20 18:00`
+- **中文日期**：明天、后天、大后天、3天后、下周一
+- **中文时间**：下午三点、晚上8点半、上午十点三十分
+- **组合使用**：明天下午三点、后天晚上8点
+
+## 配置项
+
+在 AstrBot WebUI 中可配置以下参数：
+
+| 配置项 | 说明 | 默认值 |
+|--------|------|--------|
+| 每日早报推送时间 | 格式 HH:MM | 08:00 |
+| 截止前提前提醒（分钟） | 截止前多少分钟提醒 | 30 |
+| 逾期检查间隔（小时） | 多久检查一次逾期 | 2 |
+| 启用每日早报 | 是否启用 | 开启 |
+| 启用截止时间提醒 | 是否启用 | 开启 |
+

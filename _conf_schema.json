@@ -1,0 +1,32 @@
+{
+    "daily_report_time": {
+        "description": "每日早报推送时间",
+        "type": "string",
+        "default": "08:00",
+        "hint": "格式 HH:MM，例如 08:00 表示每天早上8点推送早报"
+    },
+    "reminder_advance_minutes": {
+        "description": "截止前提前提醒（分钟）",
+        "type": "int",
+        "default": 30,
+        "hint": "在待办截止前多少分钟发送提醒，设为 0 则不提前提醒"
+    },
+    "overdue_check_interval_hours": {
+        "description": "逾期检查间隔（小时）",
+        "type": "int",
+        "default": 2,
+        "hint": "每隔多少小时检查一次逾期待办并发送提醒"
+    },
+    "enable_daily_report": {
+        "description": "启用每日早报",
+        "type": "bool",
+        "default": true,
+        "hint": "开启后每天在设定时间推送待办早报（仅私聊会话）"
+    },
+    "enable_deadline_reminder": {
+        "description": "启用截止时间提醒",
+        "type": "bool",
+        "default": true,
+        "hint": "开启后在待办截止前自动发送提醒（仅私聊会话）"
+    }
+}
