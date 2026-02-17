@@ -13,8 +13,9 @@ import re
 from datetime import datetime
 
 from astrbot.api import AstrBotConfig, logger
-from astrbot.api.event import AstrMessageEvent, MessageChain, MessageEventResult, filter
+from astrbot.api.event import AstrMessageEvent, MessageChain, filter
 from astrbot.api.star import Context, Star, register
+from astrbot.core.star.filter.command import GreedyStr
 from astrbot.core.utils.astrbot_path import get_astrbot_data_path
 
 from .data_manager import DataManager
@@ -97,7 +98,7 @@ class TodoPlugin(Star):
         pass
 
     @todo.command("add")
-    async def todo_add(self, event: AstrMessageEvent, content: str):
+    async def todo_add(self, event: AstrMessageEvent, content: GreedyStr):
         """添加待办事项。用法: /todo add <内容> [截止时间]"""
         if not content:
             yield event.plain_result(
@@ -200,7 +201,9 @@ class TodoPlugin(Star):
             yield event.plain_result("📭 没有需要清空的已完成记录。")
 
     @todo.command("remind")
-    async def todo_remind(self, event: AstrMessageEvent, index: int, time_text: str):
+    async def todo_remind(
+        self, event: AstrMessageEvent, index: int, time_text: GreedyStr
+    ):
         """设置自定义提醒（仅私聊）。用法: /todo remind <序号> <时间>"""
         if not self._is_private(event):
             yield event.plain_result("⚠️ 自定义提醒功能仅在私聊中可用。")
