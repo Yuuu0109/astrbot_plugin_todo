@@ -9,7 +9,6 @@ AstrBot 待办事项插件。
 """
 
 import os
-import re
 from datetime import datetime
 
 from astrbot.api import AstrBotConfig, logger
@@ -359,82 +358,38 @@ class TodoPlugin(Star):
     # ==================== 时间解析辅助 ====================
 
     def _extract_content_and_time(self, text: str) -> tuple[str, datetime | None]:
-        """从输入文本中分离内容和时间。"""
-        time_keywords = [
-            "明天",
-            "后天",
-            "大后天",
-            "今天",
-            "今日",
-            "明日",
-            "下周",
-            "这周",
-            "本周",
-            "周",
-            "上午",
-            "下午",
-            "晚上",
-            "晚",
-            "早上",
-            "早晨",
-            "凌晨",
-            "中午",
-            "傍晚",
-        ]
+        """从输入文本中分离时间和内容（时间在前，内容在后）。
 
-        # 尝试从文本开头逐步扩展，找到最长的可解析时间前缀
-        best_end = 0
+        采用按空格分词后逐步组合的方式，避免 parse_time 内部
+        re.search 匹配子串导致的误判。
+        """
+        text = text.strip()
+        if not text:
+            return text, None
+
+        # 按空格分割为词组
+        parts = text.split()
+        if len(parts) <= 1:
+            # 只有一个词，尝试整体解析为时间（只有时间没有内容则不拆分）
+            parsed = parse_time(text)
+            if parsed:
+                # 整个输入就是时间，没有内容，当作纯内容处理
+                return text, None
+            return text, None
+
+        # 从前往后逐步将更多的词加入时间部分
+        best_split = 0  # 分割点：前 best_split 个词是时间
         best_time = None
 
-        # 检查是否以时间关键词开头
-        for kw in time_keywords:
-            if text.startswith(kw):
-                # 尝试从关键词开始，逐步扩展到更大的范围来解析时间
-                for end in range(len(kw), len(text) + 1):
-                    candidate = text[:end].strip()
-                    # 遇到明显的内容分隔（空格后非时间字符）时停止
-                    parsed = parse_time(candidate)
-                    if parsed:
-                        if end > best_end:
-                            best_end = end
-                            best_time = parsed
-
-        # 检查标准日期格式开头 (2026-02-20 18:00)
-        date_pattern = re.compile(
-            r"^\d{4}[-/]\d{1,2}[-/]\d{1,2}(\s+\d{1,2}[:.:]\d{2})?"
-        )
-        m = date_pattern.match(text)
-        if m:
-            time_text = m.group().strip()
-            parsed = parse_time(time_text)
-            if parsed and m.end() > best_end:
-                best_end = m.end()
-                best_time = parsed
-
-        # 检查相对时间开头 (3天后, 三日后)
-        rel_pattern = re.compile(r"^(\d+|[一二三四五六七八九十]+)\s*[天日]后")
-        m = rel_pattern.match(text)
-        if m:
-            time_text = m.group().strip()
-            parsed = parse_time(time_text)
-            if parsed and m.end() > best_end:
-                best_end = m.end()
-                best_time = parsed
-
-        # 检查月日格式开头 (2月20日)
-        md_pattern = re.compile(
-            r"^\d{1,2}\s*月\s*\d{1,2}\s*[日号]?(\s+\d{1,2}[:.:]\d{2})?"
-        )
-        m = md_pattern.match(text)
-        if m:
-            time_text = m.group().strip()
-            parsed = parse_time(time_text)
-            if parsed and m.end() > best_end:
-                best_end = m.end()
+        for i in range(1, len(parts)):
+            candidate = " ".join(parts[:i])
+            parsed = parse_time(candidate)
+            if parsed:
+                best_split = i
                 best_time = parsed
 
         if best_time:
-            content = text[best_end:].strip()
+            content = " ".join(parts[best_split:]).strip()
             if content:
                 return content, best_time
 
