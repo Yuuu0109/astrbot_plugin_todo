@@ -26,7 +26,7 @@ from .time_parser import format_relative, format_time, parse_time
     "astrbot_plugin_todo",
     "Yuuu0109",
     "待办事项管理插件，支持中文自然语言时间、定时提醒和每日早报",
-    "1.0.2",
+    "1.0.3",
     "https://github.com/Yuuu0109/astrbot_plugin_todo",
 )
 class TodoPlugin(Star):
@@ -77,13 +77,8 @@ class TodoPlugin(Star):
             logger.info(f"[Todo] 逾期检查已启用，间隔 {self.overdue_interval} 小时")
 
     def _get_storage_key(self, event: AstrMessageEvent) -> str:
-        """根据消息事件生成存储键。"""
-        umo = event.unified_msg_origin
-        group_id = event.get_group_id()
-        if group_id:
-            sender_id = event.get_sender_id()
-            return DataManager.make_storage_key(umo, sender_id, is_group=True)
-        return DataManager.make_storage_key(umo)
+        """根据消息事件生成存储键。群聊全群共享。"""
+        return event.unified_msg_origin
 
     def _is_private(self, event: AstrMessageEvent) -> bool:
         """判断是否为私聊消息。"""
@@ -111,13 +106,27 @@ class TodoPlugin(Star):
         key = self._get_storage_key(event)
         await self.data_manager.add_todo(key, text, deadline)
 
-        reply = f"待办已添加\n{text}"
+        # 获取当前所有未完成待办，确定新添加的序号
+        items = await self.data_manager.get_todos(key)
+        new_index = len(items)  # 新添加的在末尾
+
+        reply = f"待办已添加 (序号 {new_index})\n{text}"
         if deadline:
             reply += f"\n截止：{format_time(deadline)}"
             if self._is_private(event):
                 reply += f"\n将在截止前 {self.reminder_advance} 分钟提醒"
         else:
             reply += "\n未设置截止时间"
+
+        # 附带当前全部待办列表
+        reply += "\n\n当前待办列表："
+        for idx, item in enumerate(items, 1):
+            marker = " <-- 新增" if idx == new_index else ""
+            line = f"\n{idx}. {item.content}"
+            if item.deadline:
+                line += f" ({format_time(item.deadline)})"
+            line += marker
+            reply += line
 
         yield event.plain_result(reply)
 
@@ -310,6 +319,25 @@ class TodoPlugin(Star):
 
         yield event.plain_result("\n".join(latest_log).strip())
 
+    @todo.command("at_all")
+    async def todo_at_all(self, event: AstrMessageEvent, switch: str):
+        """设置群聊提醒是否@全体成员。用法: /todo at_all y/n"""
+        if self._is_private(event):
+            yield event.plain_result("该指令仅在群聊中可用。")
+            return
+
+        switch = switch.strip().lower()
+        if switch not in ("y", "n"):
+            yield event.plain_result("请输入 y 或 n。\n示例：/todo at_all y")
+            return
+
+        key = self._get_storage_key(event)
+        enabled = switch == "y"
+        await self.data_manager.set_setting(key, "at_all", enabled)
+
+        status = "开启" if enabled else "关闭"
+        yield event.plain_result(f"群聊提醒@全体成员已{status}。")
+
     @todo.command("help")
     async def todo_help(self, event: AstrMessageEvent):
         """查看帮助信息"""
@@ -321,34 +349,37 @@ class TodoPlugin(Star):
    添加待办事项
    示例：/todo add 明天下午三点 交报告
 
- /todo list
+/todo list
    查看未完成的待办列表
 
- /todo done <序号>
+/todo done <序号>
    标记某条待办为已完成
 
- /todo del <序号>
+/todo del <序号>
    删除某条待办
 
- /todo del_all
+/todo del_all
    删除所有未完成的待办
 
- /todo history
+/todo history
    查看已完成记录（最近20条）
 
- /todo clear
+/todo clear
    清空所有已完成记录
 
- /todo remind <序号> <时间>
+/todo remind <序号> <时间>
    设置自定义提醒（仅私聊）
 
- /todo test_report
+/todo test_report
    测试早报推送（立即发送一次）
 
- /todo new
+/todo new
    查看最新更新日志
 
- 支持的时间格式：
+/todo at_all y/n
+   设置群聊提醒是否@全体成员（仅群聊）
+
+支持的时间格式：
    标准格式：2026-02-20 18:00
    中文日期：明天、后天、3天后、下周一
    中文时间：下午三点、晚上8点半
@@ -446,7 +477,10 @@ class TodoPlugin(Star):
             lines.append(f"待办总计：未完成 {undone_count} 项 | 已完成 {done_count} 项")
 
             try:
+                at_all = self.data_manager.get_setting(key, "at_all", False)
                 message_chain = MessageChain().message("\n".join(lines))
+                if at_all:
+                    message_chain = message_chain.at_all()
                 await self.context.send_message(key, message_chain)
             except Exception as e:
                 logger.debug(f"[Todo] 早报推送失败 (key={key}): {e}")
@@ -466,7 +500,10 @@ class TodoPlugin(Star):
                         f"{item.content}\n"
                         f"截止：{format_time(item.deadline)} ({format_relative(item.deadline)})"
                     )
+                    at_all = self.data_manager.get_setting(key, "at_all", False)
                     message_chain = MessageChain().message(msg)
+                    if at_all:
+                        message_chain = message_chain.at_all()
                     await self.context.send_message(key, message_chain)
                     await self.data_manager.set_reminded(key, item.id)
                 except Exception as e:
@@ -508,7 +545,10 @@ class TodoPlugin(Star):
                 )
 
             try:
+                at_all = self.data_manager.get_setting(key, "at_all", False)
                 message_chain = MessageChain().message("\n".join(lines))
+                if at_all:
+                    message_chain = message_chain.at_all()
                 await self.context.send_message(key, message_chain)
             except Exception as e:
                 logger.debug(f"[Todo] 逾期提醒发送失败 (key={key}): {e}")

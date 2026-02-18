@@ -47,7 +47,9 @@ class Scheduler:
             interval_minutes: 检查间隔（分钟）
             callback: 检查回调函数
         """
-        task = asyncio.create_task(self._interval_loop(interval_minutes * 60, callback, "截止提醒"))
+        task = asyncio.create_task(
+            self._interval_loop(interval_minutes * 60, callback, "截止提醒")
+        )
         self._tasks.append(task)
 
     def start_overdue_check(
@@ -62,10 +64,14 @@ class Scheduler:
             interval_hours: 检查间隔（小时）
             callback: 检查回调函数
         """
-        task = asyncio.create_task(self._interval_loop(interval_hours * 3600, callback, "逾期检查"))
+        task = asyncio.create_task(
+            self._interval_loop(interval_hours * 3600, callback, "逾期检查")
+        )
         self._tasks.append(task)
 
-    async def _daily_report_loop(self, report_time: str, callback: Callable[[], Awaitable[None]]):
+    async def _daily_report_loop(
+        self, report_time: str, callback: Callable[[], Awaitable[None]]
+    ):
         """每日定时执行的循环。"""
         while True:
             try:
@@ -82,7 +88,9 @@ class Scheduler:
                     target += timedelta(days=1)
 
                 wait_seconds = (target - now).total_seconds()
-                logger.info(f"[Todo] 每日早报将在 {target.strftime('%Y-%m-%d %H:%M')} 执行，等待 {wait_seconds:.0f} 秒")
+                logger.info(
+                    f"[Todo] 每日早报将在 {target.strftime('%Y-%m-%d %H:%M')} 执行，等待 {wait_seconds:.0f} 秒"
+                )
                 await asyncio.sleep(wait_seconds)
 
                 try:

@@ -3,7 +3,7 @@
 
 存储路径：data/plugin_data/astrbot_plugin_todo/todos.json
 存储键：
-  - 群聊：{unified_msg_origin}_{sender_id}（群内每人独立）
+  - 群聊：{unified_msg_origin}（全群共享）
   - 私聊：{unified_msg_origin}
 """
 
@@ -80,8 +80,10 @@ class DataManager:
         self.data_dir = data_dir
         os.makedirs(self.data_dir, exist_ok=True)
         self.data_file = os.path.join(self.data_dir, "todos.json")
+        self.settings_file = os.path.join(self.data_dir, "settings.json")
         self._lock = asyncio.Lock()
         self._data: dict[str, list[dict]] = {}
+        self._settings: dict[str, dict] = {}
         self._load()
 
     def _load(self):
@@ -95,24 +97,45 @@ class DataManager:
         else:
             self._data = {}
 
+        if os.path.exists(self.settings_file):
+            try:
+                with open(self.settings_file, encoding="utf-8") as f:
+                    self._settings = json.load(f)
+            except (OSError, json.JSONDecodeError):
+                self._settings = {}
+        else:
+            self._settings = {}
+
     async def _save(self):
         """异步保存数据到 JSON 文件。"""
         async with self._lock:
             with open(self.data_file, "w", encoding="utf-8") as f:
                 json.dump(self._data, f, ensure_ascii=False, indent=2)
+            with open(self.settings_file, "w", encoding="utf-8") as f:
+                json.dump(self._settings, f, ensure_ascii=False, indent=2)
 
     @staticmethod
     def make_storage_key(
-        unified_msg_origin: str, sender_id: str | None = None, is_group: bool = False
+        unified_msg_origin: str,
+        sender_id: str | None = None,
+        is_group: bool = False,
     ) -> str:
         """
         生成存储键。
-        群聊：{umo}_{sender_id}，每群每人独立
-        私聊：{umo}
+        群聊和私聊均使用 umo 作为存储键，群聊全群共享待办。
         """
-        if is_group and sender_id:
-            return f"{unified_msg_origin}_{sender_id}"
         return unified_msg_origin
+
+    def get_setting(self, key: str, name: str, default=None):
+        """获取指定键的设置项。"""
+        return self._settings.get(key, {}).get(name, default)
+
+    async def set_setting(self, key: str, name: str, value):
+        """设置指定键的设置项。"""
+        if key not in self._settings:
+            self._settings[key] = {}
+        self._settings[key][name] = value
+        await self._save()
 
     def _get_items(self, key: str) -> list[TodoItem]:
         """获取指定键下的所有待办。"""

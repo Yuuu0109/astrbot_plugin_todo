@@ -13,23 +13,41 @@ from datetime import datetime, timedelta
 
 # 中文数字映射
 CN_NUM_MAP = {
-    "零": 0, "〇": 0,
-    "一": 1, "壹": 1,
-    "二": 2, "两": 2, "贰": 2,
-    "三": 3, "叁": 3,
-    "四": 4, "肆": 4,
-    "五": 5, "伍": 5,
-    "六": 6, "陆": 6,
-    "七": 7, "柒": 7,
-    "八": 8, "捌": 8,
-    "九": 9, "玖": 9,
-    "十": 10, "拾": 10,
+    "零": 0,
+    "〇": 0,
+    "一": 1,
+    "壹": 1,
+    "二": 2,
+    "两": 2,
+    "贰": 2,
+    "三": 3,
+    "叁": 3,
+    "四": 4,
+    "肆": 4,
+    "五": 5,
+    "伍": 5,
+    "六": 6,
+    "陆": 6,
+    "七": 7,
+    "柒": 7,
+    "八": 8,
+    "捌": 8,
+    "九": 9,
+    "玖": 9,
+    "十": 10,
+    "拾": 10,
 }
 
 # 星期映射
 WEEKDAY_MAP = {
-    "一": 0, "二": 1, "三": 2, "四": 3,
-    "五": 4, "六": 5, "日": 6, "天": 6,
+    "一": 0,
+    "二": 1,
+    "三": 2,
+    "四": 3,
+    "五": 4,
+    "六": 5,
+    "日": 6,
+    "天": 6,
 }
 
 
@@ -117,7 +135,9 @@ def _parse_time_of_day(text: str) -> tuple[int, int] | None:
     if m:
         h, mi = int(m.group(1)), int(m.group(2))
         # 处理上午/下午前缀
-        if ("下午" in text or "晚上" in text or "晚" in text or "傍晚" in text) and h < 12:
+        if (
+            "下午" in text or "晚上" in text or "晚" in text or "傍晚" in text
+        ) and h < 12:
             h += 12
         return (h, mi)
 
@@ -177,8 +197,14 @@ def parse_time(text: str, base: datetime | None = None) -> datetime | None:
         base = datetime.now()
 
     # 1. 尝试标准格式 YYYY-MM-DD HH:MM(:SS)
-    for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M", "%Y-%m-%d",
-                "%Y/%m/%d %H:%M:%S", "%Y/%m/%d %H:%M", "%Y/%m/%d"):
+    for fmt in (
+        "%Y-%m-%d %H:%M:%S",
+        "%Y-%m-%d %H:%M",
+        "%Y-%m-%d",
+        "%Y/%m/%d %H:%M:%S",
+        "%Y/%m/%d %H:%M",
+        "%Y/%m/%d",
+    ):
         try:
             return datetime.strptime(text, fmt)
         except ValueError:
@@ -189,7 +215,7 @@ def parse_time(text: str, base: datetime | None = None) -> datetime | None:
     if m:
         date_part = datetime(int(m.group(1)), int(m.group(2)), int(m.group(3)))
         # 尝试解析后面的时间
-        remaining = text[m.end():]
+        remaining = text[m.end() :]
         time_part = _parse_time_of_day(remaining)
         if time_part:
             return date_part.replace(hour=time_part[0], minute=time_part[1])
@@ -199,10 +225,12 @@ def parse_time(text: str, base: datetime | None = None) -> datetime | None:
     m = re.match(r"(\d{1,2})\s*月\s*(\d{1,2})\s*[日号]?", text)
     if m:
         month, day = int(m.group(1)), int(m.group(2))
-        date_part = base.replace(month=month, day=day, hour=0, minute=0, second=0, microsecond=0)
+        date_part = base.replace(
+            month=month, day=day, hour=0, minute=0, second=0, microsecond=0
+        )
         if date_part < base:
             date_part = date_part.replace(year=date_part.year + 1)
-        remaining = text[m.end():]
+        remaining = text[m.end() :]
         time_part = _parse_time_of_day(remaining)
         if time_part:
             return date_part.replace(hour=time_part[0], minute=time_part[1])
@@ -214,7 +242,10 @@ def parse_time(text: str, base: datetime | None = None) -> datetime | None:
 
     # 尝试提取日期部分
     date_patterns = [
-        r"(大后天)", r"(后天)", r"(明天|明日)", r"(今天|今日)",
+        r"(大后天)",
+        r"(后天)",
+        r"(明天|明日)",
+        r"(今天|今日)",
         r"(\d+|[一二三四五六七八九十百]+)\s*[天日]后",
         r"(下周[一二三四五六日天])",
         r"((?:这|本)?周[一二三四五六日天])",
