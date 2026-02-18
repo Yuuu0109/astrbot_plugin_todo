@@ -18,10 +18,11 @@ AstrBot 待办事项管理插件，支持在 QQ 群聊/私聊中管理待办事�
 
 | 指令 | 说明 | 示例 |
 |------|------|------|
-| `/todo add <内容> [时间]` | 添加待办 | `/todo add 交报告 明天下午三点` |
+| `/todo add [时间] <内容>` | 添加待办 | `/todo add 明天下午三点 交报告` |
 | `/todo list` | 查看未完成待办 | `/todo list` |
 | `/todo done <序号>` | 标记完成 | `/todo done 1` |
 | `/todo del <序号>` | 删除待办 | `/todo del 2` |
+| `/todo del_all` | 删除所有未完成待办 | `/todo del_all` |
 | `/todo history` | 查看已完成 | `/todo history` |
 | `/todo clear` | 清空已完成 | `/todo clear` |
 | `/todo remind <序号> <时间>` | 设置提醒（仅私聊） | `/todo remind 1 明天早上8点` |
@@ -48,3 +49,6 @@ AstrBot 待办事项管理插件，支持在 QQ 群聊/私聊中管理待办事�
 | 启用每日早报 | 是否启用 | 开启 |
 | 启用截止时间提醒 | 是否启用 | 开启 |
 
+## 更新日志
+
+查看 [CHANGELOG.md](CHANGELOG.md) 了解版本更新详情。
