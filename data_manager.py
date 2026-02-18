@@ -166,6 +166,15 @@ class DataManager:
         await self._save()
         return target
 
+    async def delete_all_todos(self, key: str) -> int:
+        """删除所有未完成待办，返回删除数量。"""
+        items = self._get_items(key)
+        done = [i for i in items if i.done]
+        deleted = len(items) - len(done)
+        self._set_items(key, done)
+        await self._save()
+        return deleted
+
     async def get_history(self, key: str, limit: int = 20) -> list[TodoItem]:
         """获取已完成待办（最近 limit 条）。"""
         items = self._get_items(key)
