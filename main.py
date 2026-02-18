@@ -204,7 +204,7 @@ class TodoPlugin(Star):
 
         yield event.plain_result("\n".join(lines))
 
-    @todo.command("clear")
+    @todo.command("history_clear")
     async def todo_clear(self, event: AstrMessageEvent):
         """清空所有已完成记录"""
         key = self._get_storage_key(event)
@@ -364,7 +364,7 @@ class TodoPlugin(Star):
 /todo history
    查看已完成记录（最近20条）
 
-/todo clear
+/todo history_clear
    清空所有已完成记录
 
 /todo remind <序号> <时间>

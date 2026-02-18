@@ -21,12 +21,12 @@
         "description": "启用每日早报",
         "type": "bool",
         "default": true,
-        "hint": "开启后每天在设定时间推送待办早报（仅私聊会话）"
+        "hint": "开启后每天在设定时间推送待办早报，群聊可通过 /todo at_all 设置@全体成员"
     },
     "enable_deadline_reminder": {
         "description": "启用截止时间提醒",
         "type": "bool",
         "default": true,
-        "hint": "开启后在待办截止前自动发送提醒（仅私聊会话）"
+        "hint": "开启后在待办截止前自动发送提醒，群聊可通过 /todo at_all 设置@全体成员"
     }
 }

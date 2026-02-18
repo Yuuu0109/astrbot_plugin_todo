@@ -128,10 +128,12 @@ class DataManager:
 
     def get_setting(self, key: str, name: str, default=None):
         """获取指定键的设置项。"""
+        self._load()
         return self._settings.get(key, {}).get(name, default)
 
     async def set_setting(self, key: str, name: str, value):
         """设置指定键的设置项。"""
+        self._load()
         if key not in self._settings:
             self._settings[key] = {}
         self._settings[key][name] = value
@@ -139,6 +141,7 @@ class DataManager:
 
     def _get_items(self, key: str) -> list[TodoItem]:
         """获取指定键下的所有待办。"""
+        self._load()
         raw = self._data.get(key, [])
         return [TodoItem.from_dict(item) for item in raw]
 
@@ -240,6 +243,7 @@ class DataManager:
 
     def get_all_keys(self) -> list[str]:
         """获取所有存储键。"""
+        self._load()
         return list(self._data.keys())
 
     def get_due_today(self, key: str) -> list[TodoItem]:
